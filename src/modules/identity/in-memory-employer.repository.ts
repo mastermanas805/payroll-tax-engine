@@ -10,14 +10,15 @@ import { Employer, EmployerRepository } from 'src/shared';
  *
  * Storage is a Map keyed by employer id; a secondary lowercase-email index keeps
  * findByEmail O(1) and enforces case-insensitive email uniqueness at the service
- * layer. Swapping to Postgres is a per-adapter change, not a rewrite (DIP).
+ * layer. Methods return Promises to satisfy the now-async EmployerRepository port
+ * (the production binding is the Mongo adapter); retained as a fast test double.
  */
 @Injectable()
 export class InMemoryEmployerRepository implements EmployerRepository {
   private readonly byId = new Map<string, Employer>();
   private readonly idByEmail = new Map<string, string>();
 
-  create(employer: Employer): Employer {
+  async create(employer: Employer): Promise<Employer> {
     // Defensive copy so callers cannot mutate stored state by reference.
     const stored: Employer = { ...employer };
     this.byId.set(stored.id, stored);
@@ -25,12 +26,12 @@ export class InMemoryEmployerRepository implements EmployerRepository {
     return { ...stored };
   }
 
-  findById(id: string): Employer | null {
+  async findById(id: string): Promise<Employer | null> {
     const found = this.byId.get(id);
     return found ? { ...found } : null;
   }
 
-  findByEmail(email: string): Employer | null {
+  async findByEmail(email: string): Promise<Employer | null> {
     const id = this.idByEmail.get(email.toLowerCase());
     if (!id) {
       return null;
@@ -39,7 +40,7 @@ export class InMemoryEmployerRepository implements EmployerRepository {
     return found ? { ...found } : null;
   }
 
-  list(): Employer[] {
+  async list(): Promise<Employer[]> {
     return Array.from(this.byId.values(), (e) => ({ ...e }));
   }
 }

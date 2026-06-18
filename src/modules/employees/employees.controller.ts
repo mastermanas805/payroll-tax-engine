@@ -34,7 +34,7 @@ export class EmployeesController {
   create(
     @CurrentEmployer() employerId: string,
     @Body() dto: CreateEmployeeDto,
-  ): Employee {
+  ): Promise<Employee> {
     return this.employeesService.create(employerId, dto);
   }
 
@@ -46,7 +46,7 @@ export class EmployeesController {
   findAll(
     @CurrentEmployer() employerId: string,
     @Query('activeOnly') activeOnly?: string,
-  ): Employee[] {
+  ): Promise<Employee[]> {
     return this.employeesService.findAll(employerId, {
       activeOnly: activeOnly === 'true',
     });
@@ -57,7 +57,7 @@ export class EmployeesController {
   findOne(
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
-  ): Employee {
+  ): Promise<Employee> {
     return this.employeesService.findOne(employerId, id);
   }
 
@@ -67,7 +67,7 @@ export class EmployeesController {
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
     @Body() dto: UpdateEmployeeDto,
-  ): Employee {
+  ): Promise<Employee> {
     return this.employeesService.update(employerId, id, dto);
   }
 
@@ -76,7 +76,7 @@ export class EmployeesController {
   deactivate(
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
-  ): Employee {
+  ): Promise<Employee> {
     return this.employeesService.deactivate(employerId, id);
   }
 }

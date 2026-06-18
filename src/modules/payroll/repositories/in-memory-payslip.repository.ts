@@ -15,7 +15,7 @@ export class InMemoryPayslipRepository implements PayslipRepository {
   /** "employerId|runId|employeeId" -> payslipId, enforcing the unique constraint. */
   private readonly uniqueIndex = new Map<string, string>();
 
-  create(payslip: Payslip): Payslip {
+  async create(payslip: Payslip): Promise<Payslip> {
     const uniqueKey = this.uniqueKey(payslip.employerId, payslip.runId, payslip.employeeId);
     const existingId = this.uniqueIndex.get(uniqueKey);
     if (existingId) {
@@ -29,7 +29,7 @@ export class InMemoryPayslipRepository implements PayslipRepository {
     return { ...stored };
   }
 
-  findOne(employerId: string, id: string): Payslip | null {
+  async findOne(employerId: string, id: string): Promise<Payslip | null> {
     const payslip = this.payslips.get(id);
     if (!payslip || payslip.employerId !== employerId) {
       return null;
@@ -37,13 +37,13 @@ export class InMemoryPayslipRepository implements PayslipRepository {
     return { ...payslip };
   }
 
-  findByRun(employerId: string, runId: string): Payslip[] {
+  async findByRun(employerId: string, runId: string): Promise<Payslip[]> {
     return Array.from(this.payslips.values())
       .filter((p) => p.employerId === employerId && p.runId === runId)
       .map((p) => ({ ...p }));
   }
 
-  findByRunAndEmployee(employerId: string, runId: string, employeeId: string): Payslip | null {
+  async findByRunAndEmployee(employerId: string, runId: string, employeeId: string): Promise<Payslip | null> {
     const id = this.uniqueIndex.get(this.uniqueKey(employerId, runId, employeeId));
     if (!id) {
       return null;
@@ -52,7 +52,7 @@ export class InMemoryPayslipRepository implements PayslipRepository {
     return payslip ? { ...payslip } : null;
   }
 
-  findByEmployee(employerId: string, employeeId: string): Payslip[] {
+  async findByEmployee(employerId: string, employeeId: string): Promise<Payslip[]> {
     return Array.from(this.payslips.values())
       .filter((p) => p.employerId === employerId && p.employeeId === employeeId)
       .map((p) => ({ ...p }));

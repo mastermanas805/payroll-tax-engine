@@ -49,7 +49,7 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResult> {
     const email = dto.email.trim().toLowerCase();
 
-    if (this.employers.findByEmail(email)) {
+    if (await this.employers.findByEmail(email)) {
       throw new ConflictException('An account with this email already exists');
     }
 
@@ -75,14 +75,14 @@ export class AuthService {
       createdAt: now,
     };
 
-    const created = this.employers.create(employer);
+    const created = await this.employers.create(employer);
     return this.buildAuthResult(created);
   }
 
   /** Authenticate an existing employer (FR-1). */
   async login(dto: LoginDto): Promise<AuthResult> {
     const email = dto.email.trim().toLowerCase();
-    const employer = this.employers.findByEmail(email);
+    const employer = await this.employers.findByEmail(email);
 
     // Always run a compare to keep timing roughly uniform whether or not the
     // account exists; never reveal which of email/password was wrong.
@@ -97,8 +97,8 @@ export class AuthService {
   }
 
   /** Return the current tenant's public profile (GET /me, FR-1). */
-  getMe(employerId: string): EmployerView {
-    const employer = this.employers.findById(employerId);
+  async getMe(employerId: string): Promise<EmployerView> {
+    const employer = await this.employers.findById(employerId);
     if (!employer) {
       // Token is valid but the tenant no longer exists.
       throw new UnauthorizedException('Account not found');

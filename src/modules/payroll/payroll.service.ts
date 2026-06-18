@@ -80,14 +80,14 @@ export class PayrollService {
    * return the breakdown. Does NOT persist anything. Throws RulesetNotFound when
    * no PUBLISHED ruleset is effective for (country, regime, period).
    */
-  calculate(
+  async calculate(
     employerId: string,
     regime: string,
     payBasis: PayBasis,
     declarations: Declarations,
     period: string,
-  ): CalculationResult {
-    const ruleSet = this.resolveRulesetOrThrow(regime, period);
+  ): Promise<CalculationResult> {
+    const ruleSet = await this.resolveRulesetOrThrow(regime, period);
     const input: CalculationInput = {
       payBasis: this.toMonthly(payBasis),
       declarations: declarations ?? {},
@@ -110,14 +110,14 @@ export class PayrollService {
    *    run; it is recorded in failedEmployeeIds and the run finishes PARTIAL.
    *  - Status COMPLETED when all active employees succeeded, PARTIAL otherwise.
    */
-  runPayroll(
+  async runPayroll(
     employerId: string,
     period: string,
     idempotencyKey?: string,
-  ): RunPayrollResult {
+  ): Promise<RunPayrollResult> {
     // --- Idempotency check (NFR-6). A run already exists for this period => replay.
     const ledgerKey = `${employerId}|${period}`;
-    const existing = this.runs.findByPeriod(employerId, period);
+    const existing = await this.runs.findByPeriod(employerId, period);
     if (existing) {
       // If an explicit idempotency key was supplied and it matches the key that
       // created this run, this is a safe retry: replay the existing run +
@@ -127,7 +127,7 @@ export class PayrollService {
       if (sameKey) {
         return {
           run: existing,
-          payslips: this.payslips.findByRun(employerId, existing.id),
+          payslips: await this.payslips.findByRun(employerId, existing.id),
           replayed: true,
         };
       }
@@ -137,13 +137,13 @@ export class PayrollService {
       );
     }
 
-    const activeEmployees = this.employees.findByEmployer(employerId, { activeOnly: true });
+    const activeEmployees = await this.employees.findByEmployer(employerId, { activeOnly: true });
 
     // Pin one ruleset per distinct regime present in the active roster, ONCE, at
     // run start (NFR-5). resolveRulesetOrThrow throws RulesetNotFound if any
     // required (regime, period) has no effective ruleset — we fail fast BEFORE
     // creating the run so we never persist a half-resolvable run.
-    const pinnedRulesets = this.pinRulesetsForRoster(activeEmployees, period);
+    const pinnedRulesets = await this.pinRulesetsForRoster(activeEmployees, period);
 
     // Create the run up front in PENDING so it is discoverable / resumable.
     const run: PayrollRun = {
@@ -155,7 +155,7 @@ export class PayrollService {
       failedEmployeeIds: [],
       createdAt: new Date().toISOString(),
     };
-    this.runs.create(run);
+    await this.runs.create(run);
     if (idempotencyKey) {
       this.idempotencyLedger.set(ledgerKey, idempotencyKey);
     }
@@ -166,7 +166,7 @@ export class PayrollService {
 
     for (const employee of activeEmployees) {
       try {
-        const payslip = this.computeAndPersistPayslip(
+        const payslip = await this.computeAndPersistPayslip(
           employerId,
           run.id,
           period,
@@ -188,7 +188,7 @@ export class PayrollService {
 
     const status: PayrollRunStatus = this.deriveStatus(activeEmployees.length, failedEmployeeIds.length);
 
-    const updated = this.runs.update(employerId, run.id, {
+    const updated = await this.runs.update(employerId, run.id, {
       status,
       payslipCount: producedPayslips.length,
       failedEmployeeIds: failedEmployeeIds.length ? failedEmployeeIds : undefined,
@@ -216,14 +216,14 @@ export class PayrollService {
    * Idempotent per (run, employee): if a payslip already exists it is returned
    * rather than recomputed (NFR-6).
    */
-  private computeAndPersistPayslip(
+  private async computeAndPersistPayslip(
     employerId: string,
     runId: string,
     period: string,
     employee: Employee,
     pinnedRulesets: Map<string, RuleSet>,
-  ): Payslip {
-    const existing = this.payslips.findByRunAndEmployee(employerId, runId, employee.id);
+  ): Promise<Payslip> {
+    const existing = await this.payslips.findByRunAndEmployee(employerId, runId, employee.id);
     if (existing) {
       return existing;
     }
@@ -245,6 +245,7 @@ export class PayrollService {
     };
 
     // Engine reconciles-or-throws (FR-8); a non-reconciling payslip is never persisted.
+    // The engine stays SYNC and pure; it runs AFTER the ruleset was awaited.
     const result: CalculationResult = this.taxEngine.calculate(ruleSet, input);
 
     const payslip: Payslip = {
@@ -264,18 +265,18 @@ export class PayrollService {
    * at run start (NFR-5). Throws RulesetNotFound (fail-fast) if any regime lacks
    * an effective ruleset, so we never start a run we can't fully compute.
    */
-  private pinRulesetsForRoster(employees: Employee[], period: string): Map<string, RuleSet> {
+  private async pinRulesetsForRoster(employees: Employee[], period: string): Promise<Map<string, RuleSet>> {
     const pinned = new Map<string, RuleSet>();
     const regimes = new Set(employees.map((e) => e.regime));
     for (const regime of regimes) {
-      pinned.set(regime, this.resolveRulesetOrThrow(regime, period));
+      pinned.set(regime, await this.resolveRulesetOrThrow(regime, period));
     }
     return pinned;
   }
 
   /** Resolve the effective PUBLISHED ruleset or throw RulesetNotFound (FR-12, NFR-5). */
-  private resolveRulesetOrThrow(regime: string, period: string): RuleSet {
-    const ruleSet = this.rulesets.resolve(DEFAULT_COUNTRY, regime, period);
+  private async resolveRulesetOrThrow(regime: string, period: string): Promise<RuleSet> {
+    const ruleSet = await this.rulesets.resolve(DEFAULT_COUNTRY, regime, period);
     if (!ruleSet) {
       throw new RulesetNotFoundException(
         `No effective ruleset for ${DEFAULT_COUNTRY}/${regime} at ${period}`,
@@ -312,19 +313,19 @@ export class PayrollService {
 
   // ----- Read-side helpers used by the controller (tenant-scoped — NFR-4) -----
 
-  listRuns(employerId: string): PayrollRun[] {
+  async listRuns(employerId: string): Promise<PayrollRun[]> {
     return this.runs.findByEmployer(employerId);
   }
 
-  getRun(employerId: string, runId: string): PayrollRun | null {
+  async getRun(employerId: string, runId: string): Promise<PayrollRun | null> {
     return this.runs.findOne(employerId, runId);
   }
 
-  getRunPayslips(employerId: string, runId: string): Payslip[] {
+  async getRunPayslips(employerId: string, runId: string): Promise<Payslip[]> {
     return this.payslips.findByRun(employerId, runId);
   }
 
-  getPayslip(employerId: string, payslipId: string): Payslip | null {
+  async getPayslip(employerId: string, payslipId: string): Promise<Payslip | null> {
     return this.payslips.findOne(employerId, payslipId);
   }
 }

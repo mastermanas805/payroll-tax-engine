@@ -19,7 +19,7 @@ export class InMemoryRulesetRepository implements RulesetRepository {
   constructor() {
     for (const rs of SEED_RULESETS) {
       // Seeds must be valid; a broken seed is a programming error, fail loud.
-      this.save(rs);
+      this.saveSync(rs);
     }
   }
 
@@ -28,10 +28,10 @@ export class InMemoryRulesetRepository implements RulesetRepository {
    * @param period YYYY-MM (or any ISO date prefix); compared against the
    *   [effectiveFrom, effectiveTo] window. Returns the highest-version match.
    */
-  resolve(country: string, regime: string, period: string): RuleSet | null {
+  async resolve(country: string, regime: string, period: string): Promise<RuleSet | null> {
     const periodKey = this.toDate(period);
 
-    const matches = this.list().filter((rs) => {
+    const matches = [...this.store.values()].filter((rs) => {
       if (rs.status !== 'PUBLISHED') return false;
       if (rs.country !== country || rs.regime !== regime) return false;
       const from = this.toDate(rs.effectiveFrom);
@@ -45,11 +45,11 @@ export class InMemoryRulesetRepository implements RulesetRepository {
     return matches[0];
   }
 
-  findById(id: string): RuleSet | null {
+  async findById(id: string): Promise<RuleSet | null> {
     return this.store.get(id) ?? null;
   }
 
-  list(): RuleSet[] {
+  async list(): Promise<RuleSet[]> {
     return [...this.store.values()];
   }
 
@@ -57,7 +57,12 @@ export class InMemoryRulesetRepository implements RulesetRepository {
    * Upsert a ruleset after publish-time validation (D2). Throws
    * InvalidRuleSetException if the ruleset fails validation.
    */
-  save(rs: RuleSet): void {
+  async save(rs: RuleSet): Promise<void> {
+    this.saveSync(rs);
+  }
+
+  /** Synchronous upsert used by the constructor seed + the async save() wrapper. */
+  private saveSync(rs: RuleSet): void {
     const issues = validateRuleSet(rs);
     if (issues.length > 0) {
       throw new InvalidRuleSetException(`Ruleset ${rs.id} failed validation`, issues);

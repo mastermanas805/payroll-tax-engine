@@ -38,7 +38,7 @@ export class SeedService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    if (this.employers.findByEmail(SeedService.DEMO_EMAIL)) {
+    if (await this.employers.findByEmail(SeedService.DEMO_EMAIL)) {
       return;
     }
 
@@ -55,7 +55,7 @@ export class SeedService implements OnApplicationBootstrap {
       state: 'KA',
       createdAt: now,
     };
-    this.employers.create(employer);
+    await this.employers.create(employer);
 
     const roster: Array<Pick<Employee, 'name' | 'payBasis' | 'regime' | 'declarations'>> = [
       {
@@ -90,7 +90,7 @@ export class SeedService implements OnApplicationBootstrap {
         createdAt: now,
         updatedAt: now,
       };
-      this.employees.create(employee);
+      await this.employees.create(employee);
     }
 
     this.logger.log(

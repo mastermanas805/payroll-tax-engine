@@ -13,14 +13,14 @@ export interface FindEmployeesOptions {
  */
 export interface EmployeeRepository {
   /** Persist a new employee under `employerId`. */
-  create(employee: Employee): Employee;
+  create(employee: Employee): Promise<Employee>;
 
   /** List employees for `employerId` (optionally active-only). */
-  findByEmployer(employerId: string, opts?: FindEmployeesOptions): Employee[];
+  findByEmployer(employerId: string, opts?: FindEmployeesOptions): Promise<Employee[]>;
 
   /** Fetch one employee by id, scoped to `employerId`; null if not owned/found. */
-  findOne(employerId: string, id: string): Employee | null;
+  findOne(employerId: string, id: string): Promise<Employee | null>;
 
   /** Apply a partial update to an owned employee; returns the updated entity or null. */
-  update(employerId: string, id: string, patch: Partial<Employee>): Employee | null;
+  update(employerId: string, id: string, patch: Partial<Employee>): Promise<Employee | null>;
 }

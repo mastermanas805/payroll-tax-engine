@@ -13,14 +13,14 @@ export class InMemoryPayrollRunRepository implements PayrollRunRepository {
   /** runId -> run. */
   private readonly runs = new Map<string, PayrollRun>();
 
-  create(run: PayrollRun): PayrollRun {
+  async create(run: PayrollRun): Promise<PayrollRun> {
     // Store a defensive copy so external mutation can't corrupt the store.
     const stored: PayrollRun = { ...run, failedEmployeeIds: run.failedEmployeeIds ? [...run.failedEmployeeIds] : undefined };
     this.runs.set(stored.id, stored);
     return { ...stored };
   }
 
-  findByEmployer(employerId: string): PayrollRun[] {
+  async findByEmployer(employerId: string): Promise<PayrollRun[]> {
     return Array.from(this.runs.values())
       .filter((r) => r.employerId === employerId)
       .map((r) => ({ ...r }))
@@ -28,7 +28,7 @@ export class InMemoryPayrollRunRepository implements PayrollRunRepository {
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
   }
 
-  findOne(employerId: string, id: string): PayrollRun | null {
+  async findOne(employerId: string, id: string): Promise<PayrollRun | null> {
     const run = this.runs.get(id);
     if (!run || run.employerId !== employerId) {
       return null;
@@ -36,14 +36,14 @@ export class InMemoryPayrollRunRepository implements PayrollRunRepository {
     return { ...run };
   }
 
-  findByPeriod(employerId: string, period: string): PayrollRun | null {
+  async findByPeriod(employerId: string, period: string): Promise<PayrollRun | null> {
     const match = Array.from(this.runs.values()).find(
       (r) => r.employerId === employerId && r.period === period,
     );
     return match ? { ...match } : null;
   }
 
-  update(employerId: string, id: string, patch: Partial<PayrollRun>): PayrollRun | null {
+  async update(employerId: string, id: string, patch: Partial<PayrollRun>): Promise<PayrollRun | null> {
     const run = this.runs.get(id);
     if (!run || run.employerId !== employerId) {
       return null;

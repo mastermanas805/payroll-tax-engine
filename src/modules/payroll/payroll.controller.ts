@@ -46,7 +46,7 @@ export class PayrollController {
   calculate(
     @CurrentEmployer() employerId: string,
     @Body() dto: CalculatePayrollDto,
-  ): CalculationResult {
+  ): Promise<CalculationResult> {
     return this.payrollService.calculate(
       employerId,
       dto.regime,
@@ -63,12 +63,12 @@ export class PayrollController {
    */
   @Post('runs')
   @HttpCode(HttpStatus.CREATED)
-  runPayroll(
+  async runPayroll(
     @CurrentEmployer() employerId: string,
     @Body() dto: RunPayrollDto,
     @Headers('idempotency-key') idempotencyKey?: string,
-  ): RunPayrollResponse {
-    const { run, payslips } = this.payrollService.runPayroll(
+  ): Promise<RunPayrollResponse> {
+    const { run, payslips } = await this.payrollService.runPayroll(
       employerId,
       dto.period,
       idempotencyKey,
@@ -78,17 +78,17 @@ export class PayrollController {
 
   /** GET /api/v1/payroll/runs — list this employer's runs (newest first). */
   @Get('runs')
-  listRuns(@CurrentEmployer() employerId: string): PayrollRun[] {
+  listRuns(@CurrentEmployer() employerId: string): Promise<PayrollRun[]> {
     return this.payrollService.listRuns(employerId);
   }
 
   /** GET /api/v1/payroll/runs/:id — one run, tenant-scoped. 404 if not owned/found. */
   @Get('runs/:id')
-  getRun(
+  async getRun(
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
-  ): PayrollRun {
-    const run = this.payrollService.getRun(employerId, id);
+  ): Promise<PayrollRun> {
+    const run = await this.payrollService.getRun(employerId, id);
     if (!run) {
       throw new NotFoundException('Payroll run not found');
     }
@@ -97,12 +97,12 @@ export class PayrollController {
 
   /** GET /api/v1/payroll/runs/:id/payslips — payslips for a run, tenant-scoped. */
   @Get('runs/:id/payslips')
-  getRunPayslips(
+  async getRunPayslips(
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
-  ): Payslip[] {
+  ): Promise<Payslip[]> {
     // 404 the parent run if it doesn't belong to this tenant (avoid leaking existence).
-    const run = this.payrollService.getRun(employerId, id);
+    const run = await this.payrollService.getRun(employerId, id);
     if (!run) {
       throw new NotFoundException('Payroll run not found');
     }
@@ -121,11 +121,11 @@ export class PayslipController {
 
   /** GET /api/v1/payslips/:id — one payslip with full breakdown + audit trace. */
   @Get(':id')
-  getPayslip(
+  async getPayslip(
     @CurrentEmployer() employerId: string,
     @Param('id') id: string,
-  ): Payslip {
-    const payslip = this.payrollService.getPayslip(employerId, id);
+  ): Promise<Payslip> {
+    const payslip = await this.payrollService.getPayslip(employerId, id);
     if (!payslip) {
       throw new NotFoundException('Payslip not found');
     }

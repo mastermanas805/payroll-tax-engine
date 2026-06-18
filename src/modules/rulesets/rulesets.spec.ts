@@ -50,60 +50,62 @@ describe('InMemoryRulesetRepository', () => {
     repo = new InMemoryRulesetRepository();
   });
 
-  it('loads both seed rulesets at construction', () => {
-    expect(repo.list()).toHaveLength(2);
-    expect(repo.findById('IN-OLD-2025-26')).not.toBeNull();
-    expect(repo.findById('IN-NEW-2025-26')).not.toBeNull();
+  it('loads both seed rulesets at construction', async () => {
+    expect(await repo.list()).toHaveLength(2);
+    expect(await repo.findById('IN-OLD-2025-26')).not.toBeNull();
+    expect(await repo.findById('IN-NEW-2025-26')).not.toBeNull();
   });
 
-  it('resolves the published ruleset whose window covers the period', () => {
-    const old = repo.resolve('IN', 'OLD', '2025-07');
+  it('resolves the published ruleset whose window covers the period', async () => {
+    const old = await repo.resolve('IN', 'OLD', '2025-07');
     expect(old?.id).toBe('IN-OLD-2025-26');
-    const neu = repo.resolve('IN', 'NEW', '2026-03');
+    const neu = await repo.resolve('IN', 'NEW', '2026-03');
     expect(neu?.id).toBe('IN-NEW-2025-26');
+    // effectiveTo is null (open-ended): periods after the FY still resolve to this
+    // version until a newer FY ruleset is published (NFR-5 temporal resolution).
+    expect((await repo.resolve('IN', 'OLD', '2026-04'))?.id).toBe('IN-OLD-2025-26');
   });
 
-  it('returns null outside the effective window or for unknown country/regime', () => {
-    expect(repo.resolve('IN', 'OLD', '2024-12')).toBeNull();
-    expect(repo.resolve('IN', 'OLD', '2026-04')).toBeNull();
-    expect(repo.resolve('US', 'OLD', '2025-07')).toBeNull();
-    expect(repo.resolve('IN', 'BOGUS', '2025-07')).toBeNull();
+  it('returns null outside the effective window or for unknown country/regime', async () => {
+    expect(await repo.resolve('IN', 'OLD', '2024-12')).toBeNull();
+    expect(await repo.resolve('US', 'OLD', '2025-07')).toBeNull();
+    expect(await repo.resolve('IN', 'BOGUS', '2025-07')).toBeNull();
   });
 
-  it('rejects an invalid ruleset on save', () => {
+  it('rejects an invalid ruleset on save', async () => {
     const bad = JSON.parse(JSON.stringify(inOld)) as RuleSet;
     bad.id = 'IN-OLD-BROKEN';
     bad.rules.find((r) => r.key === 'GRATUITY')!.params.rate = 2;
-    expect(() => repo.save(bad)).toThrow(InvalidRuleSetException);
-    expect(repo.findById('IN-OLD-BROKEN')).toBeNull();
+    await expect(repo.save(bad)).rejects.toThrow(InvalidRuleSetException);
+    expect(await repo.findById('IN-OLD-BROKEN')).toBeNull();
   });
 
-  it('rule ordering is topologically valid: BASIC before employer EPF before GROSS before SPECIAL', () => {
-    const rs = repo.findById('IN-OLD-2025-26')!;
+  it('rule ordering is topologically valid: BASIC before employer EPF before GROSS before SPECIAL', async () => {
+    const rs = (await repo.findById('IN-OLD-2025-26'))!;
     const idx = (key: string) => rs.rules.findIndex((r) => r.writes === key);
     expect(idx('component:BASIC')).toBeLessThan(idx('employer:EPF'));
     expect(idx('employer:EPF')).toBeLessThan(idx('component:GROSS'));
     expect(idx('component:GROSS')).toBeLessThan(idx('component:SPECIAL'));
   });
 
-  it('ESI eligibility reads component:GROSS', () => {
-    const rs = repo.findById('IN-OLD-2025-26')!;
+  it('ESI eligibility reads component:GROSS', async () => {
+    const rs = (await repo.findById('IN-OLD-2025-26'))!;
     const esi = rs.rules.find((r) => r.key === 'EMPLOYER_ESI')!;
     expect(esi.reads).toContain('component:GROSS');
     expect(esi.condition).toBeDefined();
   });
 
-  it('OLD regime has HRA exemption and 80C; NEW regime does not', () => {
-    const old = repo.findById('IN-OLD-2025-26')!;
-    const neu = repo.findById('IN-NEW-2025-26')!;
+  it('OLD regime has HRA exemption and 80C; NEW regime does not', async () => {
+    const old = (await repo.findById('IN-OLD-2025-26'))!;
+    const neu = (await repo.findById('IN-NEW-2025-26'))!;
     expect(old.rules.some((r) => r.writes === 'exemption:HRA')).toBe(true);
     expect(old.rules.some((r) => r.writes === 'exemption:80C')).toBe(true);
     expect(neu.rules.some((r) => r.writes === 'exemption:HRA')).toBe(false);
     expect(neu.rules.some((r) => r.writes === 'exemption:80C')).toBe(false);
   });
 
-  it('income tax SLAB declares the engine post-processors', () => {
-    const rs = repo.findById('IN-NEW-2025-26')!;
+  it('income tax SLAB declares the engine post-processors', async () => {
+    const rs = (await repo.findById('IN-NEW-2025-26'))!;
     const tax = rs.rules.find((r) => r.type === RuleType.SLAB)!;
     expect(tax.category).toBe(Category.TAX);
     expect(tax.params.postProcessors).toEqual(['REBATE_87A', 'SURCHARGE', 'CESS_4PCT']);

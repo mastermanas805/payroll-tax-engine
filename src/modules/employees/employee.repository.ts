@@ -21,13 +21,16 @@ export class InMemoryEmployeeRepository implements EmployeeRepository {
   /** id -> Employee. Tenancy is enforced by checking employerId on every access. */
   private readonly store = new Map<string, Employee>();
 
-  create(employee: Employee): Employee {
+  async create(employee: Employee): Promise<Employee> {
     const record = this.clone(employee);
     this.store.set(record.id, record);
     return this.clone(record);
   }
 
-  findByEmployer(employerId: string, opts?: FindEmployeesOptions): Employee[] {
+  async findByEmployer(
+    employerId: string,
+    opts?: FindEmployeesOptions,
+  ): Promise<Employee[]> {
     const activeOnly = opts?.activeOnly === true;
     const results: Employee[] = [];
     for (const employee of this.store.values()) {
@@ -42,7 +45,7 @@ export class InMemoryEmployeeRepository implements EmployeeRepository {
     return results;
   }
 
-  findOne(employerId: string, id: string): Employee | null {
+  async findOne(employerId: string, id: string): Promise<Employee | null> {
     const employee = this.store.get(id);
     // Tenant guard at the data layer: only return rows owned by this employer.
     if (!employee || employee.employerId !== employerId) {
@@ -51,7 +54,11 @@ export class InMemoryEmployeeRepository implements EmployeeRepository {
     return this.clone(employee);
   }
 
-  update(employerId: string, id: string, patch: Partial<Employee>): Employee | null {
+  async update(
+    employerId: string,
+    id: string,
+    patch: Partial<Employee>,
+  ): Promise<Employee | null> {
     const existing = this.store.get(id);
     if (!existing || existing.employerId !== employerId) {
       return null;
@@ -73,7 +80,7 @@ export class InMemoryEmployeeRepository implements EmployeeRepository {
    * Soft-deactivate an owned employee (DELETE is a status flip, never a hard delete —
    * payslip history must stay reproducible, NFR-2/NFR-5). Returns null if not owned.
    */
-  deactivate(employerId: string, id: string): Employee | null {
+  async deactivate(employerId: string, id: string): Promise<Employee | null> {
     return this.update(employerId, id, { status: 'INACTIVE' });
   }
 

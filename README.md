@@ -36,34 +36,43 @@ or a new tax year is a config change with tests — not a code release.
 |---|---|
 | Backend | NestJS 10 (modular monolith), TypeScript, decimal.js, JsonLogic, JWT (bcryptjs) |
 | Frontend | Vite + React + TypeScript (SPA, served statically by the backend) |
-| Persistence | In-memory repositories behind interfaces (v1) |
+| Persistence | MongoDB (Mongoose) behind repository interfaces — swapped in via DIP |
 
 ---
 
-## Prerequisites
-
-- **Node 18+** (developed/tested on Node 26)
-- npm
-
 ## Quick start
+
+### Option A — Docker Compose (recommended: app + MongoDB, one command)
+
+```bash
+git clone https://github.com/mastermanas805/payroll-tax-engine.git
+cd payroll-tax-engine
+docker compose up --build
+```
+
+Open **http://localhost:3000**. Compose starts MongoDB (persistent named volume
+`mongo-data`) and the app, which serves the API at `/api/v1` and the built SPA at `/`.
+Data survives `docker compose down` / `up`. Needs only Docker + Docker Compose.
+
+### Option B — Local Node (needs a reachable MongoDB)
 
 ```bash
 git clone https://github.com/mastermanas805/payroll-tax-engine.git
 cd payroll-tax-engine
 
-# 1. backend deps + build
-npm install
-npm run build
+# a MongoDB to talk to (skip if you already have one)
+docker run -d -p 27017:27017 -v payroll-mongo-data:/data/db --name payroll-mongo mongo:7
 
-# 2. frontend deps + build (the built SPA is served by the backend at /)
-cd client && npm install && npm run build && cd ..
-
-# 3. run — API + UI on http://localhost:3000
-npm run start:prod
+npm install && npm run build                          # backend deps + build
+cd client && npm install && npm run build && cd ..    # SPA build (served by the backend at /)
+npm run start:prod                                    # API + UI on http://localhost:3000
 ```
 
-Open **http://localhost:3000** and log in with the seeded demo account below.
-Set `PORT` to override the port.
+Configuration via env (see [`.env.example`](./.env.example)): `MONGO_URI`
+(default `mongodb://localhost:27017/payroll`), `JWT_SECRET`, `PORT`.
+Requires **Node 18+** (tested on Node 26).
+
+Either way, open **http://localhost:3000** and log in with the seeded demo account below.
 
 ### Dev mode (hot reload)
 
@@ -194,8 +203,9 @@ RUN.md                    # detailed run notes
 
 ## v1 notes & limitations
 
-- **In-memory persistence** — all data resets on restart (then the demo tenant re-seeds).
-  Repositories sit behind interfaces, so a real DB (Postgres/SQLite) is a contained swap.
+- **MongoDB persistence** — data survives restarts (Mongoose, via `MONGO_URI`). This was a
+  contained swap from the original in-memory adapter: only the repository implementations and
+  their (now `async`) interfaces changed; the engine, controllers, and UI did not.
 - **Single country per employer** — set at signup; a multinational employer is a future change.
 - **Illustrative FY2025-26 tax figures** — slabs/rates are representative for the example;
   they are data, so updating them is a ruleset edit, not code.

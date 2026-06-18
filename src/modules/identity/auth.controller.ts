@@ -45,7 +45,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(TenantGuard)
-  getMe(@CurrentEmployer() employerId: string): EmployerView {
+  getMe(@CurrentEmployer() employerId: string): Promise<EmployerView> {
     return this.authService.getMe(employerId);
   }
 }

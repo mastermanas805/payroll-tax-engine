@@ -6,14 +6,14 @@ import { Employer } from '../types/domain.types';
  */
 export interface EmployerRepository {
   /** Persist a new employer. */
-  create(employer: Employer): Employer;
+  create(employer: Employer): Promise<Employer>;
 
   /** Fetch by id, or null. */
-  findById(id: string): Employer | null;
+  findById(id: string): Promise<Employer | null>;
 
   /** Fetch by login email (auth), or null. */
-  findByEmail(email: string): Employer | null;
+  findByEmail(email: string): Promise<Employer | null>;
 
   /** All employers (admin / internal). */
-  list(): Employer[];
+  list(): Promise<Employer[]>;
 }

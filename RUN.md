@@ -1,12 +1,25 @@
 # Running the Payroll Tax Engine
 
 Multi-tenant, data-driven payroll tax engine (NestJS modular monolith + React SPA).
-Persistence is in-memory — all data resets on restart, then a demo tenant is re-seeded.
+Persistence is **MongoDB** (Mongoose) — data survives restarts; the demo tenant is seeded
+once on first boot.
 
-## Prerequisites
+## Run with Docker Compose (easiest — app + MongoDB together)
+
+```bash
+docker compose up --build      # then open http://localhost:3000
+```
+
+Starts MongoDB (persistent named volume `mongo-data`) and the app. `docker compose down`
+stops it and keeps the data; `docker compose down -v` also wipes the volume.
+
+## Prerequisites (local Node path)
 
 - Node 18+ (tested on Node 26)
-- Dependencies are already installed at the repo root and in `client/`.
+- A reachable MongoDB — quick one:
+  `docker run -d -p 27017:27017 -v payroll-mongo-data:/data/db --name payroll-mongo mongo:7`
+- Config via env (see `.env.example`): `MONGO_URI` (default `mongodb://localhost:27017/payroll`),
+  `JWT_SECRET`, `PORT`.
 
 ## Start (production: API + built SPA on one port)
 

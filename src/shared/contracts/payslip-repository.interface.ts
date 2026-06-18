@@ -7,17 +7,17 @@ import { Payslip } from '../types/domain.types';
  */
 export interface PayslipRepository {
   /** Persist an immutable payslip under its employerId. */
-  create(payslip: Payslip): Payslip;
+  create(payslip: Payslip): Promise<Payslip>;
 
   /** Fetch one payslip by id, scoped to `employerId`; null if not owned/found. */
-  findOne(employerId: string, id: string): Payslip | null;
+  findOne(employerId: string, id: string): Promise<Payslip | null>;
 
   /** List payslips for a run, scoped to `employerId`. */
-  findByRun(employerId: string, runId: string): Payslip[];
+  findByRun(employerId: string, runId: string): Promise<Payslip[]>;
 
   /** Idempotency lookup (NFR-6): existing payslip for (runId, employeeId), or null. */
-  findByRunAndEmployee(employerId: string, runId: string, employeeId: string): Payslip | null;
+  findByRunAndEmployee(employerId: string, runId: string, employeeId: string): Promise<Payslip | null>;
 
   /** List payslips for an employee, scoped to `employerId`. */
-  findByEmployee(employerId: string, employeeId: string): Payslip[];
+  findByEmployee(employerId: string, employeeId: string): Promise<Payslip[]>;
 }

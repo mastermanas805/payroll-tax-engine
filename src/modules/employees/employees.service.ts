@@ -26,7 +26,7 @@ export class EmployeesService {
   ) {}
 
   /** Enroll a new employee under `employerId`. Defaults: status ACTIVE, empty declarations. */
-  create(employerId: string, dto: CreateEmployeeDto): Employee {
+  async create(employerId: string, dto: CreateEmployeeDto): Promise<Employee> {
     const now = new Date().toISOString();
     const employee: Employee = {
       id: randomUUID(),
@@ -43,13 +43,13 @@ export class EmployeesService {
   }
 
   /** List this employer's employees (optionally active-only, used by payroll runs). */
-  findAll(employerId: string, opts?: FindEmployeesOptions): Employee[] {
+  async findAll(employerId: string, opts?: FindEmployeesOptions): Promise<Employee[]> {
     return this.employees.findByEmployer(employerId, opts);
   }
 
   /** Fetch one owned employee or throw 404 (also covers cross-tenant IDOR attempts). */
-  findOne(employerId: string, id: string): Employee {
-    const employee = this.employees.findOne(employerId, id);
+  async findOne(employerId: string, id: string): Promise<Employee> {
+    const employee = await this.employees.findOne(employerId, id);
     if (!employee) {
       throw new NotFoundException(`Employee ${id} not found`);
     }
@@ -57,7 +57,7 @@ export class EmployeesService {
   }
 
   /** Apply a partial update to an owned employee; 404 if not found/owned. */
-  update(employerId: string, id: string, dto: UpdateEmployeeDto): Employee {
+  async update(employerId: string, id: string, dto: UpdateEmployeeDto): Promise<Employee> {
     const patch: Partial<Employee> = {};
     if (dto.name !== undefined) {
       patch.name = dto.name;
@@ -75,7 +75,7 @@ export class EmployeesService {
       patch.status = dto.status;
     }
 
-    const updated = this.employees.update(employerId, id, patch);
+    const updated = await this.employees.update(employerId, id, patch);
     if (!updated) {
       throw new NotFoundException(`Employee ${id} not found`);
     }
@@ -87,8 +87,8 @@ export class EmployeesService {
    * update port — never a hard delete, so payslip history stays reproducible (NFR-2).
    * 404 if not found/owned.
    */
-  deactivate(employerId: string, id: string): Employee {
-    const updated = this.employees.update(employerId, id, { status: 'INACTIVE' });
+  async deactivate(employerId: string, id: string): Promise<Employee> {
+    const updated = await this.employees.update(employerId, id, { status: 'INACTIVE' });
     if (!updated) {
       throw new NotFoundException(`Employee ${id} not found`);
     }

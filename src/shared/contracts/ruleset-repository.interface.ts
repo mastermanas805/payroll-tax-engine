@@ -11,14 +11,14 @@ export interface RulesetRepository {
    * @param period YYYY-MM; the ruleset whose [effectiveFrom, effectiveTo] covers it.
    * @returns the matching RuleSet, or null if none is effective.
    */
-  resolve(country: string, regime: string, period: string): RuleSet | null;
+  resolve(country: string, regime: string, period: string): Promise<RuleSet | null>;
 
   /** Fetch a ruleset by its id (e.g. "IN-OLD-2025-26"), or null. */
-  findById(id: string): RuleSet | null;
+  findById(id: string): Promise<RuleSet | null>;
 
   /** List all known rulesets. */
-  list(): RuleSet[];
+  list(): Promise<RuleSet[]>;
 
   /** Upsert a ruleset (seed / publish). */
-  save(rs: RuleSet): void;
+  save(rs: RuleSet): Promise<void>;
 }

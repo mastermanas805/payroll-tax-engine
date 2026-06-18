@@ -6,17 +6,17 @@ import { PayrollRun } from '../types/domain.types';
  */
 export interface PayrollRunRepository {
   /** Persist a new run under its employerId. */
-  create(run: PayrollRun): PayrollRun;
+  create(run: PayrollRun): Promise<PayrollRun>;
 
   /** List runs for `employerId`. */
-  findByEmployer(employerId: string): PayrollRun[];
+  findByEmployer(employerId: string): Promise<PayrollRun[]>;
 
   /** Fetch one run by id, scoped to `employerId`; null if not owned/found. */
-  findOne(employerId: string, id: string): PayrollRun | null;
+  findOne(employerId: string, id: string): Promise<PayrollRun | null>;
 
   /** Idempotency check (NFR-6): existing run for (employerId, period), or null. */
-  findByPeriod(employerId: string, period: string): PayrollRun | null;
+  findByPeriod(employerId: string, period: string): Promise<PayrollRun | null>;
 
   /** Apply a partial update (status, counts) to an owned run; returns it or null. */
-  update(employerId: string, id: string, patch: Partial<PayrollRun>): PayrollRun | null;
+  update(employerId: string, id: string, patch: Partial<PayrollRun>): Promise<PayrollRun | null>;
 }

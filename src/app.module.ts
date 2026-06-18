@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 
 import { SharedModule } from './shared/shared.module';
@@ -18,7 +19,9 @@ import { SeedModule } from './modules/seed/seed.module';
 /**
  * Root composition module.
  *
- * - ConfigModule.forRoot({ isGlobal: true }) — env (JWT_SECRET, PORT, ...).
+ * - ConfigModule.forRoot({ isGlobal: true }) — env (MONGO_URI, JWT_SECRET, PORT, ...).
+ * - MongooseModule.forRootAsync — real persistence; connection string from
+ *   ConfigService/process.env MONGO_URI, defaulting to localhost/payroll.
  * - SharedModule (@Global) — JWT + TenantGuard kernel.
  * - ServeStaticModule — serves the built SPA from client/dist at '/', excluding /api/*.
  * - Feature modules (Identity, Employees, Rulesets, TaxEngine, Payroll).
@@ -26,6 +29,14 @@ import { SeedModule } from './modules/seed/seed.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri:
+          config.get<string>('MONGO_URI') ??
+          'mongodb://localhost:27017/payroll',
+      }),
+    }),
     SharedModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client', 'dist'),
