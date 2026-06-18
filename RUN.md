@@ -70,7 +70,10 @@ Auth responses are `{ accessToken, employer }`. Send the token as
 | GET  | `/payroll/runs/:id/payslips` | payslips for a run |
 | GET  | `/payslips/:id` | single payslip with full reconciled breakdown |
 
-`payBasis.amount` is the **monthly** figure in the employer's currency.
+`payBasis.amount` is the **annual** CTC/Gross in the employer's currency; payroll runs on
+a monthly cycle, so the engine normalizes it to one month (÷12) and the payslip figures are
+monthly. Statutory thresholds (EPF ceiling ₹15,000, ESI limit ₹21,000, PT) are monthly; the
+income-tax rule re-annualizes (×12) internally, applies annual slabs, then divides back.
 
 ## Quick smoke test
 
