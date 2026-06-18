@@ -1,0 +1,128 @@
+/* ============================================================================
+   Payroll — design tokens & base layer
+   Design language: clean, trust-first, neutral palette, dense readable tables,
+   clear hierarchy. One accent (a calm indigo) reserved for primary action and
+   active state; money is rendered in a tabular monospaced face.
+   ============================================================================ */
+
+:root {
+  /* Neutral palette (slate) */
+  --c-bg: #f6f7f9;
+  --c-surface: #ffffff;
+  --c-surface-2: #fbfcfd;
+  --c-surface-sunken: #f1f3f6;
+  --c-border: #e3e6ec;
+  --c-border-strong: #cdd2dc;
+
+  --c-text: #1a2230;
+  --c-text-secondary: #4a5568;
+  --c-text-muted: #8a93a3;
+  --c-text-inverse: #ffffff;
+
+  /* Accent (indigo) */
+  --c-accent: #4f46e5;
+  --c-accent-hover: #4338ca;
+  --c-accent-soft: #eef0fe;
+  --c-accent-border: #c7c9f7;
+
+  /* Semantic */
+  --c-success: #15803d;
+  --c-success-soft: #e7f5ec;
+  --c-warning: #b45309;
+  --c-warning-soft: #fdf3e7;
+  --c-danger: #b91c1c;
+  --c-danger-soft: #fcebeb;
+  --c-info: #1d4ed8;
+  --c-info-soft: #e8eefc;
+
+  /* Category accents for payslip groups */
+  --c-earning: #15803d;
+  --c-emp-deduction: #b45309;
+  --c-employer: #6d28d9;
+  --c-tax: #b91c1c;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Roboto Mono', 'Menlo', 'Consolas',
+    monospace;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 13px;
+  --r-xl: 18px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 6px 16px rgba(16, 24, 40, 0.10), 0 2px 6px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 18px 48px rgba(16, 24, 40, 0.18);
+
+  /* Layout */
+  --topbar-h: 56px;
+  --nav-w: 232px;
+  --maxw: 1280px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  color: var(--c-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--c-accent-soft);
+}
+
+/* Money: tabular, monospaced, right-aligned */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

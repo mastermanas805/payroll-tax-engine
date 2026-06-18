@@ -1,0 +1,189 @@
+{
+  "id": "IN-NEW-2025-26",
+  "country": "IN",
+  "regime": "NEW",
+  "financialYear": "2025-26",
+  "effectiveFrom": "2025-04-01",
+  "effectiveTo": null,
+  "version": 1,
+  "status": "PUBLISHED",
+  "currency": "INR",
+  "_comment": "FY2025-26 India NEW regime. Rates and slabs are ILLUSTRATIVE for the interview example; tax logic is data, not code (D1). Monthly pay cycle. NEW regime: no HRA exemption, no 80C; only standard deduction applies.",
+  "rounding": { "mode": "LINE", "unit": 1, "strategy": "HALF_UP" },
+  "rules": [
+    {
+      "key": "BASIC",
+      "type": "PERCENTAGE_OF",
+      "category": "EARNING",
+      "reads": ["input:CTC"],
+      "writes": "component:BASIC",
+      "params": { "rate": 0.5, "base": "input:CTC" },
+      "label": "Basic Salary",
+      "explainTemplate": "Basic = 50% of CTC"
+    },
+    {
+      "key": "EMPLOYER_EPF",
+      "type": "PERCENTAGE_OF",
+      "category": "EMPLOYER_CONTRIBUTION",
+      "reads": ["component:BASIC"],
+      "writes": "employer:EPF",
+      "params": { "rate": 0.12, "base": "component:BASIC", "cap": { "kind": "BASE_CEILING", "value": 15000 } },
+      "label": "Employer EPF Contribution",
+      "explainTemplate": "Employer EPF = 12% of Basic (wage ceiling 15000)"
+    },
+    {
+      "key": "GRATUITY",
+      "type": "PERCENTAGE_OF",
+      "category": "EMPLOYER_CONTRIBUTION",
+      "reads": ["component:BASIC"],
+      "writes": "employer:GRATUITY",
+      "params": { "rate": 0.0481, "base": "component:BASIC" },
+      "label": "Gratuity Provision",
+      "explainTemplate": "Gratuity = 4.81% of Basic"
+    },
+    {
+      "key": "GROSS",
+      "type": "FORMULA",
+      "category": "INFO",
+      "reads": ["input:CTC", "employer:EPF", "employer:GRATUITY"],
+      "writes": "component:GROSS",
+      "params": { "expr": { "-": [{ "var": "input:CTC" }, { "+": [{ "var": "employer:EPF" }, { "var": "employer:GRATUITY" }] }] } },
+      "label": "Gross Salary",
+      "explainTemplate": "Gross = CTC - employer contributions"
+    },
+    {
+      "key": "EMPLOYER_ESI",
+      "type": "PERCENTAGE_OF",
+      "category": "EMPLOYER_CONTRIBUTION",
+      "reads": ["component:GROSS"],
+      "writes": "employer:ESI",
+      "condition": { "<=": [{ "var": "component:GROSS" }, 21000] },
+      "params": { "rate": 0.0325, "base": "component:GROSS" },
+      "label": "Employer ESI Contribution",
+      "explainTemplate": "Employer ESI = 3.25% of Gross (only if Gross <= 21000/mo)"
+    },
+    {
+      "key": "HRA",
+      "type": "PERCENTAGE_OF",
+      "category": "EARNING",
+      "reads": ["component:BASIC"],
+      "writes": "component:HRA",
+      "params": { "rate": 0.5, "base": "component:BASIC" },
+      "label": "House Rent Allowance",
+      "explainTemplate": "HRA = 50% of Basic"
+    },
+    {
+      "key": "SPECIAL",
+      "type": "FORMULA",
+      "category": "EARNING",
+      "reads": ["component:GROSS", "component:BASIC", "component:HRA"],
+      "writes": "component:SPECIAL",
+      "params": { "expr": { "-": [{ "var": "component:GROSS" }, { "+": [{ "var": "component:BASIC" }, { "var": "component:HRA" }] }] } },
+      "label": "Special Allowance",
+      "explainTemplate": "Special = Gross - Basic - HRA (balancing figure)"
+    },
+    {
+      "key": "EMPLOYEE_EPF",
+      "type": "PERCENTAGE_OF",
+      "category": "EMPLOYEE_DEDUCTION",
+      "reads": ["component:BASIC"],
+      "writes": "deduction:EPF",
+      "params": { "rate": 0.12, "base": "component:BASIC", "cap": { "kind": "BASE_CEILING", "value": 15000 } },
+      "label": "Employee EPF",
+      "explainTemplate": "Employee EPF = 12% of Basic (wage ceiling 15000)"
+    },
+    {
+      "key": "EMPLOYEE_ESI",
+      "type": "PERCENTAGE_OF",
+      "category": "EMPLOYEE_DEDUCTION",
+      "reads": ["component:GROSS"],
+      "writes": "deduction:ESI",
+      "condition": { "<=": [{ "var": "component:GROSS" }, 21000] },
+      "params": { "rate": 0.0075, "base": "component:GROSS" },
+      "label": "Employee ESI",
+      "explainTemplate": "Employee ESI = 0.75% of Gross (only if Gross <= 21000/mo)"
+    },
+    {
+      "key": "PROFESSIONAL_TAX",
+      "type": "FIXED",
+      "category": "EMPLOYEE_DEDUCTION",
+      "reads": [],
+      "writes": "deduction:PT",
+      "params": { "amount": 200 },
+      "label": "Professional Tax",
+      "explainTemplate": "Professional Tax = fixed 200/mo (Karnataka schedule)"
+    },
+    {
+      "key": "EMPLOYER_COST",
+      "type": "AGGREGATE",
+      "category": "INFO",
+      "reads": ["input:CTC"],
+      "writes": "derived:EMPLOYER_COST",
+      "params": {},
+      "label": "Total Employer Cost (CTC)",
+      "explainTemplate": "Employer cost = CTC"
+    },
+    {
+      "key": "STD_DEDUCTION",
+      "type": "EXEMPTION",
+      "category": "EXEMPTION",
+      "reads": [],
+      "writes": "exemption:STD",
+      "params": { "amount": 75000, "annual": true },
+      "label": "Standard Deduction",
+      "explainTemplate": "Standard deduction = 75000 / yr (NEW regime)"
+    },
+    {
+      "key": "TAXABLE_INCOME",
+      "type": "FORMULA",
+      "category": "INFO",
+      "reads": ["component:GROSS", "exemption:STD"],
+      "writes": "derived:TAXABLE_INCOME",
+      "params": {
+        "expr": {
+          "max": [
+            { "-": [{ "*": [{ "var": "component:GROSS" }, 12] }, { "var": "exemption:STD" }] },
+            0
+          ]
+        }
+      },
+      "label": "Annual Taxable Income",
+      "explainTemplate": "Taxable = 12*Gross - standard deduction (NEW regime)"
+    },
+    {
+      "key": "INCOME_TAX",
+      "type": "SLAB",
+      "category": "TAX",
+      "reads": ["derived:TAXABLE_INCOME"],
+      "writes": "tax:TDS",
+      "params": {
+        "base": "derived:TAXABLE_INCOME",
+        "annual": true,
+        "brackets": [
+          { "from": 0, "to": 300000, "rate": 0 },
+          { "from": 300000, "to": 700000, "rate": 0.05 },
+          { "from": 700000, "to": 1000000, "rate": 0.1 },
+          { "from": 1000000, "to": 1200000, "rate": 0.15 },
+          { "from": 1200000, "to": 1500000, "rate": 0.2 },
+          { "from": 1500000, "to": null, "rate": 0.3 }
+        ],
+        "postProcessors": ["REBATE_87A", "SURCHARGE", "CESS_4PCT"],
+        "rebate87A": { "threshold": 700000, "maxRebate": 25000 }
+      },
+      "label": "Income Tax (TDS)",
+      "explainTemplate": "Income Tax = SLAB(taxable) -> 87A rebate -> surcharge -> 4% cess, divided to monthly"
+    },
+    {
+      "key": "NET",
+      "type": "FORMULA",
+      "category": "INFO",
+      "reads": ["component:GROSS", "deduction:EPF", "deduction:ESI", "deduction:PT", "tax:TDS"],
+      "writes": "derived:NET",
+      "params": {
+        "expr": { "-": [{ "var": "component:GROSS" }, { "+": [{ "var": "deduction:EPF" }, { "var": "deduction:ESI" }, { "var": "deduction:PT" }, { "var": "tax:TDS" }] }] }
+      },
+      "label": "Net Pay",
+      "explainTemplate": "Net = Gross - (EPF + ESI + PT + TDS)"
+    }
+  ]
+}

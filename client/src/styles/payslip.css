@@ -1,0 +1,240 @@
+/* ============================================================================
+   Payslip — the hero screen. Document-like, finished, auditable.
+   ============================================================================ */
+.payslip {
+  max-width: 880px;
+  margin: 0 auto;
+}
+.payslip-doc {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.payslip-header {
+  padding: 26px 30px;
+  background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-surface-2) 100%);
+  border-bottom: 1px solid var(--c-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.payslip-header .who { display: flex; flex-direction: column; gap: 3px; }
+.payslip-emp-name { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; }
+.payslip-period { color: var(--c-text-secondary); font-size: 14px; }
+.payslip-doc-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.payslip-doc-meta .label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.payslip-doc-meta .val { font-size: 13px; font-weight: 600; }
+
+/* Top summary strip */
+.payslip-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--c-border);
+}
+.summary-cell {
+  padding: 18px 22px;
+  border-right: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.summary-cell:last-child { border-right: none; }
+.summary-cell .label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.summary-cell .value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.summary-cell.net {
+  background: var(--c-accent-soft);
+}
+.summary-cell.net .label { color: var(--c-accent); }
+.summary-cell.net .value { color: var(--c-accent); font-weight: 700; }
+
+/* Breakdown groups */
+.payslip-body { padding: 8px 30px 26px; }
+.pgroup { margin-top: 22px; }
+.pgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 0 10px;
+  margin-bottom: 2px;
+}
+.pgroup-bar { width: 3px; height: 15px; border-radius: 2px; }
+.pgroup-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.pgroup-total {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+.pgroup.earnings .pgroup-bar { background: var(--c-earning); }
+.pgroup.earnings .pgroup-title, .pgroup.earnings .pgroup-total { color: var(--c-earning); }
+.pgroup.empded .pgroup-bar { background: var(--c-emp-deduction); }
+.pgroup.empded .pgroup-title, .pgroup.empded .pgroup-total { color: var(--c-emp-deduction); }
+.pgroup.employer .pgroup-bar { background: var(--c-employer); }
+.pgroup.employer .pgroup-title, .pgroup.employer .pgroup-total { color: var(--c-employer); }
+.pgroup.tax .pgroup-bar { background: var(--c-tax); }
+.pgroup.tax .pgroup-title, .pgroup.tax .pgroup-total { color: var(--c-tax); }
+.pgroup.exempt .pgroup-bar { background: var(--c-info); }
+.pgroup.exempt .pgroup-title, .pgroup.exempt .pgroup-total { color: var(--c-info); }
+
+.line-table { width: 100%; border-collapse: collapse; }
+.line-table td {
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--c-border);
+  font-size: 13.5px;
+  vertical-align: top;
+}
+.line-table tr:last-child td { border-bottom: none; }
+.line-label { color: var(--c-text); font-weight: 500; }
+.line-explain {
+  display: block;
+  font-size: 11.5px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.line-rulekey {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  padding-left: 16px;
+}
+.line-amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 550;
+  padding-left: 16px;
+  min-width: 130px;
+}
+
+/* Final reconciliation summary block */
+.payslip-recon {
+  margin-top: 26px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--c-surface-2);
+}
+.recon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 13.5px;
+}
+.recon-row:last-child { border-bottom: none; }
+.recon-row .lbl { color: var(--c-text-secondary); font-weight: 550; }
+.recon-row .amt {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.recon-row.net {
+  background: var(--c-accent-soft);
+}
+.recon-row.net .lbl { color: var(--c-accent); font-weight: 700; font-size: 14.5px; }
+.recon-row.net .amt { color: var(--c-accent); font-weight: 800; font-size: 16px; }
+.recon-row.cost .amt { color: var(--c-employer); }
+
+/* Audit footer */
+.payslip-audit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 16px 30px;
+  border-top: 1px solid var(--c-border);
+  background: var(--c-surface-sunken);
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+.audit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.audit-tag .k { font-weight: 600; color: var(--c-text-secondary); }
+.audit-tag .v {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+@media (max-width: 720px) {
+  .payslip-summary-strip { grid-template-columns: repeat(2, 1fr); }
+  .summary-cell:nth-child(2) { border-right: none; }
+  .summary-cell:nth-child(1), .summary-cell:nth-child(2) { border-bottom: 1px solid var(--c-border); }
+  .line-rulekey { display: none; }
+}
+
+/* Run result table tweaks */
+.total-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--c-border);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.total-band .cell {
+  background: var(--c-surface);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.total-band .label {
+  font-size: 11px; font-weight: 650; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--c-text-muted);
+}
+.total-band .value {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 18px; font-weight: 600;
+}
+.total-band .cell.accent { background: var(--c-accent-soft); }
+.total-band .cell.accent .value, .total-band .cell.accent .label { color: var(--c-accent); }
+
+@media (max-width: 720px) {
+  .total-band { grid-template-columns: repeat(2, 1fr); }
+}

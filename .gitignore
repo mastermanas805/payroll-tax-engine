@@ -1,0 +1,26 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+*.tsbuildinfo
+
+# test/coverage
+/coverage
+
+# logs
+*.log
+npm-debug.log*
+
+# env
+.env
+.env.local
+
+# editor / OS
+.DS_Store
+.idea
+.vscode
+
+# client build (served statically; produced by frontend agent)
+/client/node_modules
+/client/dist

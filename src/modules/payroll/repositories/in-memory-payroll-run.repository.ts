@@ -1,0 +1,56 @@
+import { Injectable } from '@nestjs/common';
+import { PayrollRun } from 'src/shared/types/domain.types';
+import { PayrollRunRepository } from 'src/shared/contracts';
+
+/**
+ * In-memory PayrollRunRepository (D10). Tenant-scoped: every read takes the
+ * employerId from @CurrentEmployer / the JWT and a run is only ever returned to
+ * the employer that owns it (NFR-4). Bound to the PAYROLL_RUN_REPOSITORY token
+ * and exported from PayrollModule.
+ */
+@Injectable()
+export class InMemoryPayrollRunRepository implements PayrollRunRepository {
+  /** runId -> run. */
+  private readonly runs = new Map<string, PayrollRun>();
+
+  create(run: PayrollRun): PayrollRun {
+    // Store a defensive copy so external mutation can't corrupt the store.
+    const stored: PayrollRun = { ...run, failedEmployeeIds: run.failedEmployeeIds ? [...run.failedEmployeeIds] : undefined };
+    this.runs.set(stored.id, stored);
+    return { ...stored };
+  }
+
+  findByEmployer(employerId: string): PayrollRun[] {
+    return Array.from(this.runs.values())
+      .filter((r) => r.employerId === employerId)
+      .map((r) => ({ ...r }))
+      // newest first
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  }
+
+  findOne(employerId: string, id: string): PayrollRun | null {
+    const run = this.runs.get(id);
+    if (!run || run.employerId !== employerId) {
+      return null;
+    }
+    return { ...run };
+  }
+
+  findByPeriod(employerId: string, period: string): PayrollRun | null {
+    const match = Array.from(this.runs.values()).find(
+      (r) => r.employerId === employerId && r.period === period,
+    );
+    return match ? { ...match } : null;
+  }
+
+  update(employerId: string, id: string, patch: Partial<PayrollRun>): PayrollRun | null {
+    const run = this.runs.get(id);
+    if (!run || run.employerId !== employerId) {
+      return null;
+    }
+    // employerId / id are identity and never patched.
+    const next: PayrollRun = { ...run, ...patch, id: run.id, employerId: run.employerId };
+    this.runs.set(id, next);
+    return { ...next };
+  }
+}
